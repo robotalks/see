@@ -1,0 +1,51 @@
+---
+format: hypermake.v0
+
+name: simulator
+description: Simulation Platform
+
+targets:
+  toolchain:
+    description: toolchain to build Go source code
+    watches:
+      - hack/toolchain
+    build: hack/toolchain
+
+  vendor:
+    description: fetch dependencies for Go pkg
+    after:
+      - toolchain
+    watches:
+      - vendor/manifest
+    cmds:
+      - gvt restore
+
+  test:
+    description: run tests
+    after:
+      - vendor
+    always: true
+    cmds:
+      - go test ./vis/...
+
+  build:
+    description: build binary vis
+    after:
+      - vendor
+    watches:
+      - hack/build.sh
+      - '**/**/*.go'
+      - vis/www
+    env:
+      - RELEASE
+    cmds:
+      - hack/build.sh
+
+settings:
+  default-targets:
+    - build
+  exec-target: vendor
+  exec-shell: /bin/bash
+  docker:
+    image: 'simulator-toolchain:latest'
+    src-volume: /go/src/github.com/robotalks/simulator
