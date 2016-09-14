@@ -231,6 +231,9 @@ func (s *Server) WebSocketHandler(ws *websocket.Conn) {
 		if err != nil {
 			return
 		}
+		for _, msg := range msgs {
+			s.Logger.Infof("%s: %s", strings.ToUpper(msg.Action()), msg.MustEncode())
+		}
 		// forward to message sink
 		if s.MsgSink != nil {
 			s.MsgSink.RecvMessages(msgs)

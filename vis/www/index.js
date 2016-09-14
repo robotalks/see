@@ -159,6 +159,21 @@
         }
     }
 
+    function elemPos(elem) {
+        var pos = { x: 0, y: 0 };
+        for (; elem != null; elem = elem.offsetParent) {
+            var scrollX = elem.scrollLeft;
+            var scrollY = elem.scrollTop;
+            if (elem.tagName == "BODY") {
+                scrollX = scrollX || document.documentElement.scrollLeft;
+                scrollY = scrollY || document.documentElement.scrollTop;
+            }
+            pos.x += elem.offsetLeft - scrollX + elem.clientLeft;
+            pos.y += elem.offsetTop - scrollY + elem.clientTop;
+        }
+        return pos;
+    }
+
     var World = Class({
         constructor: function () {
             this._factories = {};
@@ -170,6 +185,11 @@
             this._canvas = document.createElement('canvas');
             this._canvas.classList.add('grids');
             this._elem.appendChild(this._canvas);
+            this._elem.setAttribute("tabindex", "0");
+            this._elem.addEventListener('click', this._onClick.bind(this));
+            this._elem.addEventListener('keydown', this._onKey.bind(this));
+            this._elem.addEventListener('keypress', this._onKey.bind(this));
+            this._elem.addEventListener('keyup', this._onKey.bind(this));
             this.connect();
         },
 
@@ -229,6 +249,10 @@
 
         updateLayout: function () {
             this.resizeGrids();
+
+            delete this._bounds;
+            delete this._viewport;
+
             var bounds = {
                 minX: null,
                 minY: null,
@@ -265,6 +289,8 @@
                 return;
             }
 
+            this._bounds = bounds;
+
             var r = w / h, br = bw / bh, offx = 0, offy = 0;
             if (r > br) {
                 var w1 = Math.ceil(h * br);
@@ -275,6 +301,8 @@
                 offy = (h - h1) >> 1;
                 h = h1;
             }
+
+            this._viewport = { x: offx, y: offy, w: w, h: h };
 
             for (var id in rects) {
                 var rc = rects[id];
@@ -385,6 +413,52 @@
             if (Array.isArray(msgs)) {
                 this.update(msgs);
             }
+        },
+
+        _emit: function (msg) {
+            if (this._socket.readyState != 1) {
+                return;
+            }
+            this._socket.send(JSON.stringify(msg));
+        },
+
+        _onClick: function (evt) {
+            if (this._bounds == null || this._viewport == null) {
+                return;
+            }
+
+            var off = elemPos(evt.currentTarget || evt.target);
+            var x = evt.clientX - off.x;
+            var y = evt.clientY - off.y;
+
+            var rx = (this._bounds.maxX - this._bounds.minX) / this._viewport.w;
+            var ry = (this._bounds.maxY - this._bounds.minY) / this._viewport.h;
+
+            var msg = {
+                action: 'click',
+                position: {
+                    x: (x - this._viewport.x) * rx + this._bounds.minX,
+                    y: (this._viewport.y + this._viewport.h - y) * ry + this._bounds.minY
+                }
+            };
+            this._emit([msg]);
+        },
+
+        _onKey: function (evt) {
+            this._emit([{
+                action: evt.type,
+                key: {
+                    repeat: evt.repeat,
+                    charCode: evt.charCode,
+                    code: evt.code,
+                    key: evt.key,
+                    keyCode: evt.keyCode,
+                    ctrl: evt.ctrlKey,
+                    alt: evt.altKey,
+                    shift: evt.shiftKey,
+                    meta: evt.metaKey,
+                }
+            }]);
         }
     });
 
