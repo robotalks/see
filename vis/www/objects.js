@@ -10,10 +10,36 @@
         render: function (elem, outer) {
             this.outerElem = elem;
             this.outer = outer;
+            if (typeof(this.createContent) == 'function') {
+                var child = this.createContent(elem, outer);
+                if (child != null) {
+                    this.setElem(child);
+                }
+            }
         },
 
         measure: function () {
             return vis.measure(this.properties);
+        },
+
+        applyStyles: function (elem) {
+            elem.classList.add('object');
+            elem.classList.add(this.properties.type);
+            if (this.properties.style != null) {
+                elem.classList.add(this.properties.style);
+            }
+            if (Array.isArray(this.properties.styles)) {
+                this.properties.styles.forEach(function (style) {
+                    elem.classList.add(style);
+                });
+            }
+            return this;
+        },
+
+        setElem: function (elem) {
+            this.applyStyles(elem);
+            this.outerElem.appendChild(elem);
+            return this;
         }
     });
 
@@ -22,12 +48,9 @@
             ObjectBase.prototype.constructor.apply(this, arguments);
         },
 
-        render: function () {
-            ObjectBase.prototype.render.apply(this, arguments);
+        createContent: function () {
             this._canvas = document.createElement('canvas');
-            this._canvas.classList.add('object');
-            this._canvas.classList.add(this.properties.type);
-            this.outerElem.appendChild(this._canvas);
+            return this._canvas;
         },
 
         place: function (viewRc) {
