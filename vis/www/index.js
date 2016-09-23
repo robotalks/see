@@ -379,8 +379,11 @@
             this.updateLayout();
         },
 
+        _update_reset: function (cmd) {
+            this.clear();
+        },
+
         _update_object: function (cmd) {
-            console.log('update-object: %j', cmd.object);
             this.addObjectElem(cmd.object);
         },
 

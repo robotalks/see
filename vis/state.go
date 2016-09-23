@@ -5,6 +5,7 @@ import "sync"
 // StateStore saves the current object states
 type StateStore interface {
 	Objects() (map[string]Object, error)
+	Reset() error
 	Update(objs ...Object) error
 	Remove(ids ...string) error
 }
@@ -26,6 +27,14 @@ func (s *MemStateStore) Objects() (objs map[string]Object, err error) {
 	}
 	s.lock.RUnlock()
 	return
+}
+
+// Reset implements StateStore
+func (s *MemStateStore) Reset() error {
+	s.lock.Lock()
+	s.objects = nil
+	s.lock.Unlock()
+	return nil
 }
 
 // Update implements StateStore

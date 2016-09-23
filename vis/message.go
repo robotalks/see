@@ -92,6 +92,7 @@ const (
 	PropAction   = "action"
 	PropObject   = "object"
 	PropID       = "id"
+	ActionReset  = "reset"
 	ActionObject = "object"
 	ActionRemove = "remove"
 )

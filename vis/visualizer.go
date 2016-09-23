@@ -314,6 +314,8 @@ func (s *Server) RecvMessages(msgs []Msg) {
 func (s *Server) HandleMessage(a Msg) (err error) {
 	action := a.Action()
 	switch action {
+	case ActionReset:
+		err = s.Reset()
 	case ActionObject:
 		if obj := a.Object(); obj != nil {
 			err = s.Update(obj)
@@ -331,6 +333,11 @@ func (s *Server) HandleMessage(a Msg) (err error) {
 		s.Logger.Errorf("%s: %s: %s", strings.ToUpper(action), err.Error(), a.MustEncode())
 	}
 	return
+}
+
+// Reset implements StateStore
+func (s *Server) Reset() error {
+	return s.States.Reset()
 }
 
 // Objects implements StateStore
