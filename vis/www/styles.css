@@ -1,6 +1,64 @@
-#world {
+.navbar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    background-color: black;
+    z-index: 10;
+}
+
+.navbar-header {
+    line-height: 60px;
+    margin-left: 10px;
+}
+
+.navbar-brand {
+    font-size: 16pt;
+    font-family: monospace;
+    font-weight: bold;
+    color: lightgray;
+}
+
+#connecting {
+  position: fixed;
+  margin: 0;
+  padding: 0;
+  margin-top: 12px;
+  text-align: center;
+  z-index: 5000;
+  width: 100%;
+}
+
+#connecting span {
+  background-color: #fea;
+  border: solid #cb8 1px;
+  color: red;
+  width: 240px;
+  font-size: 12pt;
+  font-weight: bold;
+  font-family: monospace;
+  padding: 4px 64px;
+  animation: blinker 1s linear infinite;
+}
+
+@keyframes blinker {
+  50% { opacity: 0.0; }
+}
+
+#content {
     position: absolute;
     top: 60px;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 10;
+    background-color: lightgray;
+}
+
+#world {
+    position: absolute;
+    top: 6px;
     bottom: 8px;
     left: 8px;
     right: 8px;
@@ -15,13 +73,16 @@ canvas.grids {
     right: 0;
     z-index: 200;
     color: #6ae;
+    background-color: white;
+    border: #6ae solid 2px;
 }
 
 .object {
     position: absolute;
     overflow: hidden;
     z-index: 1000;
-    border: gray dotted 1px;
+    // this should be overridden in plugins
+    // border: gray dotted 1px;
 }
 
 .object-unknown {

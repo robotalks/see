@@ -204,6 +204,7 @@
             this._socket.onopen = this._connected.bind(this);
             this._socket.onclose = this._disconnected.bind(this);
             this._socket.onmessage = this._message.bind(this);
+            $('#connecting').show();
         },
 
         register: function (type, factory) {
@@ -248,7 +249,7 @@
         },
 
         updateLayout: function () {
-            this.resizeGrids();
+            $(this._canvas).hide();
 
             delete this._bounds;
             delete this._viewport;
@@ -315,45 +316,47 @@
                 this._objects[id].place(viewRc, rc);
             }
 
-            this.updateGrids(offx - Math.floor(bounds.minX * w / bw),
-                             offy + h + Math.floor(bounds.minY * h / bh),
+            this.updateGrids(- Math.floor(bounds.minX * w / bw),
+                             h + Math.floor(bounds.minY * h / bh),
                              offx, offy);
         },
 
-        resizeGrids: function () {
-            this._canvas.setAttribute('width', this._elem.clientWidth);
-            this._canvas.setAttribute('height', this._elem.clientHeight);
-        },
-
         updateGrids: function (origX, origY, offx, offy) {
-            var w = this._canvas.clientWidth, h = this._canvas.clientHeight;
+            $(this._canvas).show();
+
+            var w = this._elem.clientWidth - offx * 2, h = this._elem.clientHeight - offy * 2;
+            this._canvas.style.left = offx + "px";
+            this._canvas.style.top = offy + "px";
+            this._canvas.setAttribute('width', w);
+            this._canvas.setAttribute('height', h);
+
             var ctx = this._canvas.getContext('2d');
             ctx.clearRect(0, 0, w, h);
             ctx.strokeStyle = $(this._canvas).css('color');
             ctx.lineWidth = 1;
             ctx.beginPath();
-            ctx.moveTo(origX, offy);
-            ctx.lineTo(origX, h - offy);
-            ctx.moveTo(offx, origY);
-            ctx.lineTo(w - offx, origY);
+            ctx.moveTo(origX, 0);
+            ctx.lineTo(origX, h);
+            ctx.moveTo(0, origY);
+            ctx.lineTo(w, origY);
             ctx.stroke();
             ctx.setLineDash([1, 1]);
             ctx.beginPath();
-            gridExtent(origX, offx, w - offx, function (x, solid) {
+            gridExtent(origX, 0, w, function (x, solid) {
                 if (solid) {
-                    ctx.moveTo(x, offy);
-                    ctx.lineTo(x, h - offy);
+                    ctx.moveTo(x, 0);
+                    ctx.lineTo(x, h);
                 } else {
-                    gridExtent(origY, offy, h - offy, function (y) {
+                    gridExtent(origY, 0, h, function (y) {
                         ctx.moveTo(x, y);
                         ctx.lineTo(x+1, y+1);
                     });
                 }
             });
-            gridExtent(origY, offy, h - offy, function (y, solid) {
+            gridExtent(origY, 0, h, function (y, solid) {
                 if (solid) {
-                    ctx.moveTo(offx, y);
-                    ctx.lineTo(w - offx, y);
+                    ctx.moveTo(0, y);
+                    ctx.lineTo(w, y);
                 }
             });
             ctx.stroke();
@@ -398,10 +401,12 @@
         },
 
         _connected: function () {
+            $('#connecting').hide();
             this.clear();
         },
 
         _disconnected: function () {
+            $('#connecting').show();
             setTimeout(this.connect.bind(this), 500);
         },
 
