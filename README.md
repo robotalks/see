@@ -20,7 +20,11 @@ it accepts.
 
 ## Getting Started
 
-**LINUX IS THE ONLY SUPPORTED PLATFORM**
+Supported platforms:
+
+- Mac OS X
+- Linux AMD64
+- Linux ARMv7
 
 Build the tool using [hmake](https://evo-cloud.github.io/hmake) which is hassle-free,
 no worry about dependencies:
@@ -29,11 +33,11 @@ no worry about dependencies:
 hmake
 ```
 
-It will generate executable `bin/see`.
+It will generate executable `bin/OS/ARCH/see`.
 And now you can hook up your own simulation program:
 
 ```
-bin/see -- my-sim-prog args...
+bin/linux/amd64/see -- my-sim-prog args...
 ```
 
 Point your browser to `http://localhost:3500` and you will see the objects emitted
@@ -42,7 +46,7 @@ from your simulation program.
 To watch an MQTT topic:
 
 ```
-bin/see mqtt://server:port/topic-prefix
+bin/linux/amd64/see mqtt://server:port/topic-prefix
 ```
 
 And it will watch messages from topic `topic-prefix/msgs`, and emits events to
@@ -53,7 +57,7 @@ And it will watch messages from topic `topic-prefix/msgs`, and emits events to
 To hook up your own rendering extensions:
 
 ```
-bin/see -I ext-dir1 -I ext-dir2 ... -- my-sim-prog args...
+bin/linux/amd64/see -I ext-dir1 -I ext-dir2 ... -- my-sim-prog args...
 ```
 
 In each of extension directory, file `visualizer.plugin` is expected.
@@ -76,7 +80,7 @@ The following directories are always scanned for plugins before anything else:
 
 ## Details
 
-TODO _ready the code for now, sorry..._
+TODO _read the code for now, sorry..._
 
 ## License
 MIT

@@ -11,7 +11,7 @@ func main() {
 	cli := &flag.CliDef{
 		Cli: &flag.Command{
 			Name: "see",
-			Desc: "Simulation Engine",
+			Desc: "Visualization Engine",
 			Options: []*flag.Option{
 				&flag.Option{
 					Name:    "port",

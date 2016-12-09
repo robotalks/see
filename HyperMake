@@ -28,7 +28,7 @@ targets:
     cmds:
       - go test ./vis/...
 
-  build:
+  build-[target:linux-amd64,linux-armhf,darwin-amd64]:
     description: build binary vis
     after:
       - vendor
@@ -39,7 +39,12 @@ targets:
     env:
       - RELEASE
     cmds:
-      - hack/build.sh
+      - hack/build.sh $[target]
+
+  build:
+    description: build for all targets
+    after:
+      - 'build-*'
 
 settings:
   default-targets:
