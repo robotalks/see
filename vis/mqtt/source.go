@@ -7,7 +7,8 @@ import (
 	"strings"
 
 	paho "github.com/eclipse/paho.mqtt.golang"
-	"github.com/robotalks/simulator/vis"
+	"github.com/robotalks/see/vis"
+	"github.com/rs/xid"
 )
 
 const (
@@ -33,7 +34,7 @@ func NewMsgSourceFromURL(serverURL string) (s *MsgSource, err error) {
 	if s.Server, err = url.Parse(serverURL); err != nil {
 		return
 	}
-	s.Prefix = strings.Trim(Server.Path, "/")
+	s.Prefix = strings.Trim(s.Server.Path, "/")
 	if s.Prefix != "" {
 		s.Prefix += "/"
 	}
@@ -49,11 +50,15 @@ func (s *MsgSource) Connect() error {
 		opts := paho.NewClientOptions()
 		opts.Servers = append(opts.Servers, s.Server)
 		if s.Server.User != nil {
-			if opts.Username = s.Server.User.Username(); opts.Username != "" {
-				opts.Password = s.Server.User.Password()
+			opts.Username = s.Server.User.Username()
+			if pwd, present := s.Server.User.Password(); present {
+				opts.Password = pwd
 			}
 		}
 		opts.ClientID = s.ClientID
+		if opts.ClientID == "" {
+			opts.ClientID = xid.New().String()
+		}
 		s.Client = paho.NewClient(opts)
 	}
 	if s.Client.IsConnected() {
@@ -77,7 +82,7 @@ func (s *MsgSource) messageHandler(_ paho.Client, msg paho.Message) {
 func (s *MsgSource) RecvMessages(msgs []vis.Msg) {
 	if client := s.Client; client != nil && client.IsConnected() {
 		client.Publish(s.Prefix+EventsTopic, 0, false,
-			[]byte(string(MustEncode(msgs))))
+			[]byte(string(vis.MustEncode(msgs))))
 	}
 }
 
@@ -88,7 +93,7 @@ func (s *MsgSource) ProcessMessages(sink vis.MessageSink) error {
 		if !ok {
 			return io.EOF
 		}
-		decoder := NewMsgDecoder(bytes.NewBuffer(msg.Payload()))
+		decoder := vis.NewMsgDecoder(bytes.NewBuffer(msg.Payload()))
 		for {
 			if msgs, err := decoder.Decode(); err == nil {
 				sink.RecvMessages(msgs)

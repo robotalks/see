@@ -48,4 +48,4 @@ settings:
   exec-shell: /bin/bash
   docker:
     image: 'simulator-toolchain:latest'
-    src-volume: /go/src/github.com/robotalks/simulator
+    src-volume: /go/src/github.com/robotalks/see

@@ -25,6 +25,7 @@ import (
 type PageContext struct {
 	Stylesheets []string `json:"stylesheets" yaml:"stylesheets"`
 	Scripts     []string `json:"scripts" yaml:"scripts"`
+	Title       string   `json:"-" yaml:"-"`
 }
 
 // PluginManifest is the content of plugin manifest file
@@ -44,6 +45,8 @@ type Builtin struct {
 const (
 	// PluginManifestFile is the filename of plugin manifest
 	PluginManifestFile = "visualizer.plugin"
+	// DefaultTitle for page
+	DefaultTitle = "Visualizer"
 )
 
 // LoadPluginManifest loads plugin manifest from specified directory
@@ -80,6 +83,7 @@ type Server struct {
 	Logger        *logger.Logger
 	WebContentDir string
 	Builtins      []Builtin
+	Title         string
 
 	plugins []*plugin
 	conns   map[*websocket.Conn]*websocket.Conn
@@ -89,7 +93,7 @@ type Server struct {
 // LoadPlugin loads plugin from specified directory
 func (s *Server) LoadPlugin(dir string) error {
 	var name string
-	pos := strings.Index(dir, ":")
+	pos := strings.Index(dir, "=")
 	if pos > 0 {
 		name = dir[0:pos]
 		dir = dir[pos+1:]
@@ -206,6 +210,10 @@ func (s *Server) GenerateIndexPage(fs http.FileSystem) (string, error) {
 		return "", err
 	}
 	var ctx PageContext
+	if ctx.Title = s.Title; ctx.Title == "" {
+		ctx.Title = DefaultTitle
+	}
+
 	for _, b := range s.Builtins {
 		for _, fn := range b.Visualizer.Stylesheets {
 			ctx.Stylesheets = append(ctx.Stylesheets, path.Join(b.Path, fn))

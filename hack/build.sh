@@ -4,7 +4,7 @@ set -ex
 
 test -d "$HMAKE_PROJECT_DIR"
 
-LDFLAGS=
+LDFLAGS="-s -w"
 if [ -n "$RELEASE" ]; then
   LDFLAGS="$LDFLAGS -X main.VersionSuffix="
 else
@@ -20,10 +20,10 @@ build-go() {
     CGO_ENABLED=0 go build -o $HMAKE_PROJECT_DIR/bin/$cmd \
         -a -tags 'static_build netgo' -installsuffix netgo \
         -ldflags "$LDFLAGS -extldflags -static" \
-        github.com/robotalks/simulator/cmd/$cmd
+        github.com/robotalks/see/cmd/$cmd
 }
 
 mkdir -p $HMAKE_PROJECT_DIR/bin
-build-go sim-ng
-rice append -i github.com/robotalks/simulator/vis \
-    --exec $HMAKE_PROJECT_DIR/bin/sim-ng
+build-go see
+rice append -i github.com/robotalks/see/vis \
+    --exec $HMAKE_PROJECT_DIR/bin/see

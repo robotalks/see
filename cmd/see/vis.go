@@ -10,16 +10,27 @@ import (
 	"strings"
 
 	logger "github.com/op/go-logging"
-	vis "github.com/robotalks/simulator/vis"
-	mqtt "github.com/robotalks/simulator/vis/mqtt"
+	vis "github.com/robotalks/see/vis"
+	mqtt "github.com/robotalks/see/vis/mqtt"
 )
 
+// Version number
+const Version = "0.1.0"
+
+// VersionSuffix provides suffix info
+var VersionSuffix = "-dev"
+
+// PrintVersion prints version
+func PrintVersion() {
+	fmt.Println(Version + VersionSuffix)
+}
+
 type visCmd struct {
-	Port          int
-	Quiet         bool
-	PluginDirs    []string `n:"plugin-dir"`
-	WebContentDir string   `n:"web-content-dir"`
-	Version       bool
+	Port       int
+	Quiet      bool
+	PluginDirs []string `n:"plugin-dir"`
+	Title      string
+	Version    bool
 
 	logger *logger.Logger
 }
@@ -30,7 +41,7 @@ func (c *visCmd) Execute(args []string) error {
 		return nil
 	}
 
-	c.logger = logger.MustGetLogger("visualizer")
+	c.logger = logger.MustGetLogger("see")
 	if c.Quiet {
 		logger.SetLevel(logger.NOTICE, c.logger.Module)
 	} else {
@@ -44,7 +55,8 @@ func (c *visCmd) Execute(args []string) error {
 	srv := &vis.Server{
 		Listener:      ln,
 		States:        &vis.MemStateStore{},
-		WebContentDir: c.WebContentDir,
+		Title:         c.Title,
+		WebContentDir: os.Getenv("SEE_WEB_ROOT"),
 		Logger:        c.logger,
 	}
 
@@ -57,9 +69,9 @@ func (c *visCmd) Execute(args []string) error {
 	case len(args) == 0:
 		source = &vis.StreamMsgSource{Reader: os.Stdin, Writer: os.Stdout}
 	case strings.HasPrefix(args[0], "mqtt://"):
-		src, err := mqtt.NewMsgSourceFromURL("tcp" + args[0][4:])
-		if err != nil {
-			return err
+		src, e := mqtt.NewMsgSourceFromURL("tcp" + args[0][4:])
+		if e != nil {
+			return e
 		}
 		if len(args) > 1 {
 			src.ClientID = args[1]
@@ -69,14 +81,14 @@ func (c *visCmd) Execute(args []string) error {
 		}
 		source = src
 	default:
-		src, err := vis.NewExecMsgSource(args[0], args[1:]...)
-		if err != nil {
-			return err
+		src, e := vis.NewExecMsgSource(args[0], args[1:]...)
+		if e != nil {
+			return e
 		}
 		if err = src.Cmd.Start(); err != nil {
 			return err
 		}
-		src.Cmd.Release()
+		src.Cmd.Process.Release()
 		source = src
 	}
 	srv.MsgSink = source
@@ -96,11 +108,18 @@ func (c *visCmd) Execute(args []string) error {
 func (c *visCmd) loadPlugins(srv *vis.Server) error {
 	usr, err := user.Current()
 	if err == nil {
-		srv.LoadPlugin(filepath.Join(usr.HomeDir, ".sim-ng"))
+		srv.LoadPlugin(filepath.Join(usr.HomeDir, ".robotalks"))
 	}
 	wd, err := os.Getwd()
 	if err == nil {
 		srv.LoadPlugin(wd)
+	}
+	if dirs := os.Getenv("SEE_PLUGIN_PATH"); dirs != "" {
+		for _, dir := range filepath.SplitList(dirs) {
+			if srv.LoadPlugin(dir) == nil {
+				c.logger.Infof("Loaded %s", dir)
+			}
+		}
 	}
 	for _, dir := range c.PluginDirs {
 		if err = srv.LoadPlugin(dir); err != nil {
@@ -119,7 +138,9 @@ func (c *visCmd) processMsgs(source vis.MsgSource, sink vis.MessageSink, errCh c
 	for {
 		err := source.ProcessMessages(sink)
 		if err != nil {
-			errCh <- err
+			if err != io.EOF {
+				errCh <- err
+			}
 			break
 		}
 	}
