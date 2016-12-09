@@ -78,5 +78,33 @@
             },
             "radius": 0.5
         }
+    },
+    {
+        "action": "object",
+        "object": {
+            "id": "img0",
+            "type": "image",
+            "src": "https://images-na.ssl-images-amazon.com/images/G/01/aplusautomation/vendorimages/65fa961e-8f22-4fe6-a420-3c3c26dd2953.jpg._CB289161999__SL300__.jpg",
+            "rect": {
+                "x": 2,
+                "y": 2,
+                "w": 3,
+                "h": 3
+            }
+        }
+    },
+    {
+        "action": "object",
+        "object": {
+            "id": "img1",
+            "type": "image",
+            "src": "http://files.softicons.com/download/system-icons/crystal-project-icons-by-everaldo-coelho/png/32x32/actions/jabber_original.png",
+            "rect": {
+                "x": -2,
+                "y": -2,
+                "w": 3,
+                "h": 3
+            }
+        }
     }
 ]

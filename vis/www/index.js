@@ -91,6 +91,15 @@
             return mapAs({x: 0, y: 0}, this.properties().origin, 'number');
         },
 
+        update: function (props) {
+            if (this._elem && this._impl &&
+                this.type() == props.type &&
+                typeof(this._impl.update) == 'function') {
+                return this._impl.update(props, this);
+            }
+            return false;
+        },
+
         build: function (impl) {
             if (this._impl && typeof(this._impl.destroy) == 'function') {
                 this._impl.destroy();
@@ -218,24 +227,20 @@
             };
         },
 
-        createObjectImpl: function (props) {
+        addObjectElem: function (props) {
             if (props == null || typeof(props.type) != 'string') {
                 return null;
             }
-            var factory = this._factories[props.type];
-            if (factory != null) {
-                return factory(props, this);
-            } else {
-                return unknownObject(props);
+            var obj = this._objects[props.id];
+            if (obj != null && obj.update(props)) {
+                return obj;
             }
-        },
 
-        addObjectElem: function (props) {
-            var impl = this.createObjectImpl(props);
+            var factory = this._factories[props.type];
+            var impl = factory ? factory(props, this) : unknownObject(props);
             if (impl == null) {
                 return null;
             }
-            var obj = this._objects[props.id];
             if (obj == null) {
                 obj = new ObjectElem(this, props);
                 this._objects[props.id] = obj;
