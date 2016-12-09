@@ -87,6 +87,18 @@ func SinkMessage(sink func([]Msg)) MessageSink {
 	return &funcMessageSink{fn: sink}
 }
 
+// MsgSource is the source of message, and also accepts messages
+type MsgSource interface {
+	MessageSink
+	// ProcessMessages is a loop to drain messages and send to
+	// provided MessageSink. The returned error can be io.EOF to
+	// indicate end of message processing, or any other errors to
+	// leave for application to determine call ProcessMessages again
+	// or simply abort. Returning nil usually indicates there are
+	// more messages, and application will call ProcessMessages again
+	ProcessMessages(MessageSink) error
+}
+
 // Properties and Action names
 const (
 	PropAction   = "action"

@@ -10,6 +10,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -30,6 +31,14 @@ type PageContext struct {
 type PluginManifest struct {
 	Name       string      `json:"name" yaml:"name"`
 	Visualizer PageContext `json:"visualizer" yaml:"visualizer"`
+}
+
+// Builtin is used to extend the index page from application using
+// this package directly
+type Builtin struct {
+	Path       string
+	Visualizer PageContext
+	Handler    http.Handler
 }
 
 const (
@@ -70,6 +79,7 @@ type Server struct {
 	MsgSink       MessageSink
 	Logger        *logger.Logger
 	WebContentDir string
+	Builtins      []Builtin
 
 	plugins []*plugin
 	conns   map[*websocket.Conn]*websocket.Conn
@@ -121,11 +131,23 @@ func (s *Server) Serve() error {
 	return http.ListenAndServe(fmt.Sprintf("%s:%d", s.Host, s.Port), h)
 }
 
+// AddBuiltin registers a builtin extension
+func (s *Server) AddBuiltin(builtin Builtin) *Server {
+	s.Builtins = append(s.Builtins, builtin)
+	return s
+}
+
 // Handler creates default http handler
 func (s *Server) Handler() (http.Handler, error) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/objects", s.StatesHandler)
 	mux.Handle("/ws", websocket.Handler(s.WebSocketHandler))
+	for _, b := range s.Builtins {
+		if b.Handler != nil {
+			prefix := "/" + strings.Trim(b.Path, "/") + "/"
+			mux.Handle(prefix, b.Handler)
+		}
+	}
 	for _, p := range s.plugins {
 		prefix := "/plugins/" + p.name + "/"
 		mux.Handle(prefix, http.StripPrefix(prefix, http.FileServer(http.Dir(p.fullDir))))
@@ -184,6 +206,14 @@ func (s *Server) GenerateIndexPage(fs http.FileSystem) (string, error) {
 		return "", err
 	}
 	var ctx PageContext
+	for _, b := range s.Builtins {
+		for _, fn := range b.Visualizer.Stylesheets {
+			ctx.Stylesheets = append(ctx.Stylesheets, path.Join(b.Path, fn))
+		}
+		for _, fn := range b.Visualizer.Scripts {
+			ctx.Scripts = append(ctx.Scripts, path.Join(b.Path, fn))
+		}
+	}
 	for _, p := range s.plugins {
 		mf, mfErr := LoadPluginManifest(p.fullDir)
 		if mfErr != nil {

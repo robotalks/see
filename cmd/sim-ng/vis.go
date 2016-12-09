@@ -5,12 +5,13 @@ import (
 	"io"
 	"net"
 	"os"
-	"os/exec"
 	"os/user"
 	"path/filepath"
+	"strings"
 
 	logger "github.com/op/go-logging"
 	vis "github.com/robotalks/simulator/vis"
+	mqtt "github.com/robotalks/simulator/vis/mqtt"
 )
 
 type visCmd struct {
@@ -51,21 +52,45 @@ func (c *visCmd) Execute(args []string) error {
 		return err
 	}
 
-	prog, err := c.startProgram(args...)
-	if err != nil {
-		return err
+	var source vis.MsgSource
+	switch {
+	case len(args) == 0:
+		source = &vis.StreamMsgSource{Reader: os.Stdin, Writer: os.Stdout}
+	case strings.HasPrefix(args[0], "mqtt://"):
+		src, err := mqtt.NewMsgSourceFromURL("tcp" + args[0][4:])
+		if err != nil {
+			return err
+		}
+		if len(args) > 1 {
+			src.ClientID = args[1]
+		}
+		if err = src.Connect(); err != nil {
+			return err
+		}
+		source = src
+	default:
+		src, err := vis.NewExecMsgSource(args[0], args[1:]...)
+		if err != nil {
+			return err
+		}
+		if err = src.Cmd.Start(); err != nil {
+			return err
+		}
+		src.Cmd.Release()
+		source = src
 	}
-
-	srv.MsgSink = vis.SinkMessage(func(msgs []vis.Msg) {
-		c.forwardMsgs(prog.w, msgs)
-	})
+	srv.MsgSink = source
 
 	c.logger.Noticef("Listen %s", ln.(*net.TCPListener).Addr().String())
 
 	errCh := make(chan error)
 	go c.runServer(srv, errCh)
-	go c.processOutput(prog.r, srv, errCh)
-	return <-errCh
+	go c.processMsgs(source, srv, errCh)
+	err = <-errCh
+	if err == io.EOF {
+		err = nil
+	}
+	return err
 }
 
 func (c *visCmd) loadPlugins(srv *vis.Server) error {
@@ -86,64 +111,16 @@ func (c *visCmd) loadPlugins(srv *vis.Server) error {
 	return nil
 }
 
-type program struct {
-	w io.WriteCloser
-	r io.ReadCloser
-}
-
-func (p *program) close() {
-	if p.w != nil {
-		p.w.Close()
-	}
-	if p.r != nil {
-		p.r.Close()
-	}
-}
-
-func (c *visCmd) startProgram(args ...string) (p *program, err error) {
-	p = &program{w: os.Stdout, r: os.Stdin}
-	if len(args) == 0 || args[0] == "-" || args[0] == "" {
-		return
-	}
-
-	cmd := exec.Command(args[0], args[1:]...)
-	cmd.Env = os.Environ()
-	cmd.Stderr = os.Stderr
-	if p.w, err = cmd.StdinPipe(); err != nil {
-		return
-	}
-	if p.r, err = cmd.StdoutPipe(); err != nil {
-		p.w.Close()
-		return
-	}
-	if err = cmd.Start(); err != nil {
-		p.w.Close()
-		p.r.Close()
-		return
-	}
-	cmd.Process.Release()
-	return
-}
-
-func (c *visCmd) forwardMsgs(w io.Writer, msgs []vis.Msg) {
-	w.Write([]byte(string(vis.MustEncode(msgs)) + "\n"))
-}
-
 func (c *visCmd) runServer(srv *vis.Server, errCh chan error) {
 	errCh <- srv.Serve()
 }
 
-func (c *visCmd) processOutput(r io.Reader, sink vis.MessageSink, errCh chan error) {
-	decoder := vis.NewMsgDecoder(r)
+func (c *visCmd) processMsgs(source vis.MsgSource, sink vis.MessageSink, errCh chan error) {
 	for {
-		msgs, err := decoder.Decode()
-		if err == io.EOF {
-			break
-		}
+		err := source.ProcessMessages(sink)
 		if err != nil {
 			errCh <- err
 			break
 		}
-		sink.RecvMessages(msgs)
 	}
 }
