@@ -89,6 +89,16 @@ canvas.grids {
     border: gray dotted 1px;
 }
 
+.container {
+    position: absolute;
+    overflow: hidden;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border: 0;
+}
+
 img.object {
     position: absolute;
     overflow: hidden;
@@ -120,4 +130,13 @@ canvas.corner {
 
 canvas.dot {
     color: green;
+}
+
+.joystick .stick {
+    position: absolute;
+    min-width: 25%;
+    max-width: 25%;
+    min-height: 25%;
+    max-height: 25%;
+    background-color: green;
 }

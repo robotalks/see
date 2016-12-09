@@ -168,7 +168,7 @@
         }
     }
 
-    function elemPos(elem) {
+    function elementOffset(elem) {
         var pos = { x: 0, y: 0 };
         for (; elem != null; elem = elem.offsetParent) {
             var scrollX = elem.scrollLeft;
@@ -181,6 +181,14 @@
             pos.y += elem.offsetTop - scrollY + elem.clientTop;
         }
         return pos;
+    }
+
+    function relativePos(elem, x, y) {
+        var off = elementOffset(elem);
+        return {
+            x: x - off.x,
+            y: y - off.y,
+        };
     }
 
     var World = Class({
@@ -387,6 +395,13 @@
             this.updateLayout();
         },
 
+        emit: function (msg) {
+            if (this._socket.readyState != 1) {
+                return;
+            }
+            this._socket.send(JSON.stringify(msg));
+        },
+
         _update_reset: function (cmd) {
             this.clear();
         },
@@ -428,21 +443,12 @@
             }
         },
 
-        _emit: function (msg) {
-            if (this._socket.readyState != 1) {
-                return;
-            }
-            this._socket.send(JSON.stringify(msg));
-        },
-
         _onClick: function (evt) {
             if (this._bounds == null || this._viewport == null) {
                 return;
             }
 
-            var off = elemPos(evt.currentTarget || evt.target);
-            var x = evt.clientX - off.x;
-            var y = evt.clientY - off.y;
+            var pos = relativePos(evt.currentTarget || evt.target, evt.clientX, evt.clientY);
 
             var rx = (this._bounds.maxX - this._bounds.minX) / this._viewport.w;
             var ry = (this._bounds.maxY - this._bounds.minY) / this._viewport.h;
@@ -450,15 +456,15 @@
             var msg = {
                 action: 'click',
                 position: {
-                    x: (x - this._viewport.x) * rx + this._bounds.minX,
-                    y: (this._viewport.y + this._viewport.h - y) * ry + this._bounds.minY
+                    x: (pos.x - this._viewport.x) * rx + this._bounds.minX,
+                    y: (this._viewport.y + this._viewport.h - pos.y) * ry + this._bounds.minY
                 }
             };
-            this._emit([msg]);
+            this.emit([msg]);
         },
 
         _onKey: function (evt) {
-            this._emit([{
+            this.emit([{
                 action: evt.type,
                 key: {
                     repeat: evt.repeat,
@@ -487,6 +493,8 @@
         world: theWorld,
         mapAs: mapAs,
         measure: measure,
+        elementOffset: elementOffset,
+        relativePos: relativePos,
         registerClass: function (cls) { return theWorld.registerClass(cls); }
     };
 })(window);

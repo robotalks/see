@@ -1,0 +1,83 @@
+[
+    {
+        "action": "object",
+        "object": {
+            "id": "lt",
+            "type": "corner",
+            "loc": "lt",
+            "rect": {
+                "x":-10,
+                "y": 10,
+                "w": 0.1,
+                "h": 0.1
+            }
+        }
+    },
+    {
+        "action": "object",
+        "object": {
+            "id": "rt",
+            "type": "corner",
+            "loc": "rt",
+            "rect": {
+                "x": 10,
+                "y": 10,
+                "w": 0.1,
+                "h": 0.1
+            }
+        }
+    },
+    {
+        "action": "object",
+        "object": {
+            "id": "lb",
+            "type": "corner",
+            "loc": "lb",
+            "rect": {
+                "x": -10,
+                "y": -10,
+                "w": 0.1,
+                "h": 0.1
+            }
+        }
+    },
+    {
+        "action": "object",
+        "object": {
+            "id": "rb",
+            "type": "corner",
+            "loc": "rb",
+            "rect": {
+                "x": 10,
+                "y": -10,
+                "w": 0.1,
+                "h": 0.1
+            }
+        }
+    },
+    {
+        "action": "object",
+        "object": {
+            "id": "joy0",
+            "type": "joystick",
+            "origin": {
+                "x": -5,
+                "y": 0
+            },
+            "radius": 2
+        }
+    },
+    {
+        "action": "object",
+        "object": {
+            "id": "joy1",
+            "type": "joystick",
+            "x": false,
+            "origin": {
+                "x": 5,
+                "y": 0
+            },
+            "radius": 2
+        }
+    }
+]

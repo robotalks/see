@@ -7,6 +7,14 @@
             this.world = world;
         },
 
+        id: function () {
+            return this.properties.id;
+        },
+
+        type: function () {
+            return this.properties.type;
+        },
+
         render: function (elem, outer) {
             this.outerElem = elem;
             this.outer = outer;
@@ -40,6 +48,13 @@
             this.applyStyles(elem);
             this.outerElem.appendChild(elem);
             return this;
+        },
+
+        emit: function (msg) {
+            if (!Array.isArray(msg)) {
+                msg = [msg];
+            }
+            this.world.emit(msg);
         }
     });
 

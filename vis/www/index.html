@@ -7,15 +7,16 @@
     {{range .Stylesheets}}
     <link rel="stylesheet" href="{{.}}">
     {{end}}
-    <script src="jquery.min.js"></script>
-    <script src="js-class.min.js"></script>
+    <script src="lib/jquery.min.js"></script>
+    <script src="lib/js-class.min.js"></script>
     <script src="index.js"></script>
     <script src="objects.js"></script>
-    <script src="corner.js"></script>
-    <script src="label.js"></script>
-    <script src="image.js"></script>
-    <script src="dot.js"></script>
-    <script src="camera.js"></script>
+    <script src="modules/corner.js"></script>
+    <script src="modules/label.js"></script>
+    <script src="modules/image.js"></script>
+    <script src="modules/dot.js"></script>
+    <script src="modules/camera.js"></script>
+    <script src="modules/joystick.js"></script>
     {{range .Scripts}}
     <script src="{{.}}"></script>
     {{end}}
