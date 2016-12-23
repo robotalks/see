@@ -11,6 +11,7 @@ import (
 
 	logger "github.com/op/go-logging"
 	vis "github.com/robotalks/see/vis"
+	"github.com/robotalks/see/vis/mqhub"
 	mqtt "github.com/robotalks/see/vis/mqtt"
 )
 
@@ -68,6 +69,18 @@ func (c *visCmd) Execute(args []string) error {
 	switch {
 	case len(args) == 0:
 		source = &vis.StreamMsgSource{Reader: os.Stdin, Writer: os.Stdout}
+	case strings.HasPrefix(args[0], "mqhub://"):
+		if len(args) < 2 {
+			return fmt.Errorf("mqhub expects schema file as second argument")
+		}
+		src, e := mqhub.NewMsgSource("mqtt"+args[0][5:], args[1])
+		if e != nil {
+			return e
+		}
+		if err = src.Connect(); err != nil {
+			return err
+		}
+		source = src
 	case strings.HasPrefix(args[0], "mqtt://"):
 		src, e := mqtt.NewMsgSourceFromURL("tcp" + args[0][4:])
 		if e != nil {
@@ -96,7 +109,7 @@ func (c *visCmd) Execute(args []string) error {
 	c.logger.Noticef("Listen %s", ln.(*net.TCPListener).Addr().String())
 
 	errCh := make(chan error)
-	go c.runServer(srv, errCh)
+	go c.runServer(source, srv, errCh)
 	go c.processMsgs(source, srv, errCh)
 	err = <-errCh
 	if err == io.EOF {
@@ -130,8 +143,9 @@ func (c *visCmd) loadPlugins(srv *vis.Server) error {
 	return nil
 }
 
-func (c *visCmd) runServer(srv *vis.Server, errCh chan error) {
-	errCh <- srv.Serve()
+func (c *visCmd) runServer(ext interface{}, srv *vis.Server, errCh chan error) {
+	srvExt, _ := ext.(vis.ServerExt)
+	errCh <- srv.Serve(srvExt)
 }
 
 func (c *visCmd) processMsgs(source vis.MsgSource, sink vis.MessageSink, errCh chan error) {

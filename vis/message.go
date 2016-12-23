@@ -25,6 +25,9 @@ func (m Msg) Action() string {
 // Object returns object property
 func (m Msg) Object() Object {
 	val := m[PropObject]
+	if obj, ok := val.(Object); ok {
+		return obj
+	}
 	if objMap, ok := val.(map[string]interface{}); ok {
 		return Object(objMap)
 	}
@@ -34,6 +37,29 @@ func (m Msg) Object() Object {
 // ID returns id property
 func (m Msg) ID() string {
 	return stringProp(m, PropID)
+}
+
+// ByKeys retrieves a value following the keys
+func (m Msg) ByKeys(keys ...string) (v interface{}) {
+	if len(keys) == 0 {
+		return m
+	}
+	if v = m[keys[0]]; v == nil {
+		return
+	}
+
+	keys = keys[1:]
+	for _, key := range keys {
+		if dict, ok := v.(map[string]interface{}); ok {
+			v = dict[key]
+		} else {
+			return nil
+		}
+		if v == nil {
+			break
+		}
+	}
+	return
 }
 
 // Object is an object containing arbitrary fields

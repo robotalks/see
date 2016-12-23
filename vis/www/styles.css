@@ -132,6 +132,10 @@ canvas.dot {
     color: green;
 }
 
+.object-type-joystick {
+    z-index: 1100;
+}
+
 .joystick .stick {
     position: absolute;
     min-width: 25%;

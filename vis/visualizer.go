@@ -67,6 +67,11 @@ func LoadPluginManifest(dir string) (*PluginManifest, error) {
 	return manifest, err
 }
 
+// ServerExt extends server handlers
+type ServerExt interface {
+	AddHandlers(mux *http.ServeMux) error
+}
+
 type plugin struct {
 	name    string
 	dir     string
@@ -124,8 +129,8 @@ func (s *Server) LoadPlugin(dir string) error {
 }
 
 // Serve runs the server
-func (s *Server) Serve() error {
-	h, err := s.Handler()
+func (s *Server) Serve(ext ServerExt) error {
+	h, err := s.Handler(ext)
 	if err != nil {
 		return err
 	}
@@ -142,7 +147,7 @@ func (s *Server) AddBuiltin(builtin Builtin) *Server {
 }
 
 // Handler creates default http handler
-func (s *Server) Handler() (http.Handler, error) {
+func (s *Server) Handler(ext ServerExt) (http.Handler, error) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/objects", s.StatesHandler)
 	mux.Handle("/ws", websocket.Handler(s.WebSocketHandler))
@@ -176,6 +181,11 @@ func (s *Server) Handler() (http.Handler, error) {
 			fsHandler.ServeHTTP(w, r)
 		}
 	})
+	if ext != nil {
+		if err := ext.AddHandlers(mux); err != nil {
+			return nil, err
+		}
+	}
 	return mux, nil
 }
 

@@ -49,7 +49,10 @@ func main() {
 			Arguments: []*flag.Option{
 				&flag.Option{
 					Name: "source",
-					Desc: "Message source, can be a program or a MQTT URL: mqtt://server:port/topic-prefix",
+					Desc: "Message source, can be a program or a URL\n" +
+						"Supported protocol:\n" +
+						"   MQHUB: mqhub://server:port/topic-prefix SCHEMA-FILE\n" +
+						"   MQTT:  mqtt://server:port/topic-prefix\n",
 					Type: "string",
 					Tags: map[string]interface{}{"help-var": "SOURCE"},
 				},

@@ -1,0 +1,54 @@
+---
+objects: |
+  [
+    {
+      "id": "sight",
+      "type": "image",
+      "src": "mqhub/states/cam0/still?ts=TIMESTAMP",
+      "interval": 50,
+      "rect": {"x": -4, "y": 3, "w": 8, "h": 6}
+    },
+    {
+      "id": "motorL",
+      "type": "joystick",
+      "x": false,
+      "rect": {"x": -4, "y": 3, "w": 2, "h": 6}
+    },
+    {
+      "id": "motorR",
+      "type": "joystick",
+      "x": false,
+      "rect": {"x": 2, "y": 3, "w": 2, "h": 6}
+    },
+    {
+      "id": "btn0",
+      "type": "label",
+      "content": {{with object . "btn0"}}"{{.state}}"{{else}}""{{end}},
+      "rect": {"x": -1, "y": 1, "w": 0.25, "h": 0.1}
+    }
+  ]
+
+states:
+  - component: cam0
+    endpoint: still
+    content-type: image/jpeg
+
+mute:
+  - component: cam0
+    endpoint: still
+
+actions:
+  - action: stick
+    matches:
+      - keys: ["stick", "id"]
+        value: motorL
+    component: motors/left
+    endpoint: speed
+    data: '{{.action.stick.pos.y}}'
+  - action: stick
+    matches:
+      - keys: ["stick", "id"]
+        value: motorR
+    component: motors/right
+    endpoint: speed
+    data: '{{.action.stick.pos.y}}'
