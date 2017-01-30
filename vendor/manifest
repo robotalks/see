@@ -100,7 +100,7 @@
         {
             "importpath": "github.com/robotalks/mqhub.go",
             "repository": "https://github.com/robotalks/mqhub.go",
-            "revision": "376c9adf971bd196d72a0e6d12e9ada3d9f1346b",
+            "revision": "3c92e551de142e623edc065a2b137cd27f01fea9",
             "branch": "master",
             "notests": true
         },

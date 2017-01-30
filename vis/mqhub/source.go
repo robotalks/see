@@ -7,6 +7,7 @@ import (
 	"os"
 
 	hub "github.com/robotalks/mqhub.go/mqhub"
+	// load mqtt impl
 	_ "github.com/robotalks/mqhub.go/mqtt"
 	"github.com/robotalks/see/vis"
 )
@@ -57,14 +58,10 @@ func (s *MsgSource) RecvMessages(msgs []vis.Msg) {
 				sch.Component, sch.Endpoint, err)
 			continue
 		}
-		conn, err := s.Connector.Describe(sch.Component).Endpoint("", sch.Endpoint).Reactor()
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "connect reactor %s/%s error: %v\n",
-				sch.Component, sch.Endpoint, err)
-			continue
-		}
-		defer conn.Close()
-		conn.ConsumeMessage(hub.StreamMessage(data))
+		s.Connector.
+			Describe(sch.Component).
+			Endpoint(sch.Endpoint).
+			ConsumeMessage(hub.StreamMessage(data))
 	}
 }
 

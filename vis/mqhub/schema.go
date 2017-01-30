@@ -209,6 +209,7 @@ type Schema struct {
 	current  []vis.Object
 }
 
+// LoadSchemaFile load schema from file
 func LoadSchemaFile(filename string) (*Schema, error) {
 	content, err := ioutil.ReadFile(filename)
 	if err != nil {
