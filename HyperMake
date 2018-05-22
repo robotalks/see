@@ -13,9 +13,9 @@ targets:
     after:
       - toolchain
     watches:
-      - vendor/manifest
+      - Gopkg.toml
     cmds:
-      - gvt restore
+      - dep ensure
 
   test:
     description: run tests
@@ -49,5 +49,5 @@ settings:
   exec-target: vendor
   exec-shell: /bin/bash
   docker:
-    image: 'robotalks/toolchain:latest'
+    image: 'robotalks/toolchain:stretch-0'
     src-volume: /go/src/github.com/robotalks/see
