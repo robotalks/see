@@ -86,6 +86,7 @@ type Server struct {
 	States        StateStore
 	MsgSink       MessageSink
 	Logger        *logger.Logger
+	LocalWebDir   string
 	WebContentDir string
 	Builtins      []Builtin
 	Title         string
@@ -93,6 +94,21 @@ type Server struct {
 	plugins []*plugin
 	conns   map[*websocket.Conn]*websocket.Conn
 	lock    sync.RWMutex
+}
+
+type layeredFs struct {
+	Fs []http.FileSystem
+}
+
+func (l *layeredFs) Open(name string) (http.File, error) {
+	for _, fs := range l.Fs {
+		f, err := fs.Open(name)
+		if os.IsNotExist(err) {
+			continue
+		}
+		return f, err
+	}
+	return nil, os.ErrNotExist
 }
 
 // LoadPlugin loads plugin from specified directory
@@ -161,16 +177,20 @@ func (s *Server) Handler(ext ServerExt) (http.Handler, error) {
 		prefix := "/plugins/" + p.name + "/"
 		mux.Handle(prefix, http.StripPrefix(prefix, http.FileServer(http.Dir(p.fullDir))))
 	}
-	var fs http.FileSystem
+	fs := &layeredFs{}
+	if s.LocalWebDir != "" {
+		s.Logger.Infof("Use Local Web Content: %s", s.LocalWebDir)
+		fs.Fs = append(fs.Fs, http.Dir(s.LocalWebDir))
+	}
 	if s.WebContentDir != "" {
 		s.Logger.Infof("Use Web Content: %s", s.WebContentDir)
-		fs = http.Dir(s.WebContentDir)
+		fs.Fs = append(fs.Fs, http.Dir(s.WebContentDir))
 	} else {
 		box, err := rice.FindBox("www")
 		if err != nil {
 			return nil, err
 		}
-		fs = box.HTTPBox()
+		fs.Fs = append(fs.Fs, box.HTTPBox())
 	}
 	fsHandler := http.FileServer(fs)
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {

@@ -33,9 +33,15 @@
         applyStyles: function (elem) {
             elem.classList.add('object');
             elem.classList.add(this.properties.type);
+            var style = '';
             if (this.properties.style != null) {
-                elem.classList.add(this.properties.style);
+                style = this.properties.style;
             }
+            if (this.properties.rotate != null) {
+                var angle = -this.properties.rotate;
+                style += '; transform-origin: center; transform: rotate(' + angle + 'deg)';
+            }
+            elem.style = style;
             if (Array.isArray(this.properties.styles)) {
                 this.properties.styles.forEach(function (style) {
                     elem.classList.add(style);

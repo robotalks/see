@@ -95,7 +95,12 @@
             if (this._elem && this._impl &&
                 this.type() == props.type &&
                 typeof(this._impl.update) == 'function') {
-                return this._impl.update(props, this);
+                if (this._impl.update(props, this)) {
+                    if (typeof(this._impl.applyStyles) == 'function') {
+                        this._impl.applyStyles(this._elem);
+                    }
+                    return true;
+                }
             }
             return false;
         },

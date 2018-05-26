@@ -80,7 +80,122 @@ The following directories are always scanned for plugins before anything else:
 
 ## Details
 
-TODO _read the code for now, sorry..._
+### Messages to visualizer
+
+#### Reset the world
+
+```json
+{
+  "action": "reset"
+}
+```
+
+#### Update/Insert an object
+
+```json
+{
+  "action": "object",
+  "object": {
+    "id": "object-id",
+    "type": "object-type",
+    "style": "css-class",
+    "styles": ["css-class"],
+    "rect": { "x": 0, "y": 0, "w": 0, "h": 0 },
+    "origin": { "x": 0, "y": 0 },
+    "radius": 0
+  }
+}
+```
+
+Other properties are type specific.
+
+##### Camera
+
+```json
+{
+  "type": "camera",
+  "angle": 0,
+}
+```
+
+##### Corner
+
+```json
+{
+  "type": "corner",
+  "loc": "lt|rb|lb|rt"
+}
+```
+
+##### Dot
+
+```json
+{
+  "type": "dot"
+}
+```
+
+##### Image
+
+```json
+{
+  "type": "image",
+  "src": "url"
+}
+```
+
+Keyword `TIMESTAMP` in `src` will be replaced with current timestamp if present.
+
+##### Label
+
+```json
+{
+  "type": "label",
+  "content": "text to show"
+}
+```
+
+##### Joystick
+
+```json
+{
+  "type": "joystick"
+}
+```
+
+#### Remove an object
+
+```json
+{
+  "action": "remove",
+  "id": "object-id"
+}
+```
+
+### Events from visualizer
+
+```json
+[
+  {
+    "action": "click",
+    "position": { "x": 0, "y": 0 },
+  },
+  {
+    "action": "keyup/keydown/keypress",
+    "key": {
+      "repeat": false,
+      "charCode": 0,
+      "code": "ArrowDown/KeyI/...",
+      "key": "ArrowDown/i/...",
+      "keyCode": 40, /* 73 for i */
+      "ctrl": false,
+      "alt": false,
+      "shift": false,
+      "meta": false,
+    }
+  }
+]
+```
 
 ## License
 MIT

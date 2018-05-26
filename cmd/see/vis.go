@@ -57,6 +57,7 @@ func (c *visCmd) Execute(args []string) error {
 		Listener:      ln,
 		States:        &vis.MemStateStore{},
 		Title:         c.Title,
+		LocalWebDir:   ".vis.www",
 		WebContentDir: os.Getenv("SEE_WEB_ROOT"),
 		Logger:        c.logger,
 	}
@@ -94,6 +95,9 @@ func (c *visCmd) Execute(args []string) error {
 		}
 		source = src
 	default:
+		if len(args) == 0 || args[0] == "" {
+			args = []string{"./.vis.exec"}
+		}
 		src, e := vis.NewExecMsgSource(args[0], args[1:]...)
 		if e != nil {
 			return e
