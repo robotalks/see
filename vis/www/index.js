@@ -97,7 +97,7 @@
                 typeof(this._impl.update) == 'function') {
                 if (this._impl.update(props, this)) {
                     if (typeof(this._impl.applyStyles) == 'function') {
-                        this._impl.applyStyles(this._elem);
+                        this._impl.applyStyles();
                     }
                     return true;
                 }

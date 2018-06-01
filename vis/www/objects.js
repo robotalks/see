@@ -30,28 +30,36 @@
             return vis.measure(this.properties);
         },
 
-        applyStyles: function (elem) {
-            elem.classList.add('object');
-            elem.classList.add(this.properties.type);
-            var style = '';
-            if (this.properties.style != null) {
-                style = this.properties.style;
-            }
-            if (this.properties.rotate != null) {
-                var angle = -this.properties.rotate;
-                style += '; transform-origin: center; transform: rotate(' + angle + 'deg)';
-            }
-            elem.style = style;
-            if (Array.isArray(this.properties.styles)) {
-                this.properties.styles.forEach(function (style) {
-                    elem.classList.add(style);
-                });
+        applyStyles: function () {
+            var elem = this.contentElem;
+            if (elem != null) {
+                elem.classList.add('object');
+                elem.classList.add(this.properties.type);
+                if (this.properties.style != null) {
+                    if (typeof(this.properties.style) == 'string') {
+                        elem.style = this.properties.style;
+                    } else if (typeof(this.properties.style) == 'object') {
+                        for (var key in this.properties.style) {
+                            elem.style.setProperty(key, this.properties.style[key]);
+                        }
+                    }
+                }
+                if (Array.isArray(this.properties.styles)) {
+                    this.properties.styles.forEach(function (style) {
+                        elem.classList.add(style);
+                    });
+                }
+                if (this.properties.rotate != null) {
+                    var angle = -this.properties.rotate;
+                    elem.style.setProperty('transform', 'rotate(' + angle + 'deg)');
+                }
             }
             return this;
         },
 
         setElem: function (elem) {
-            this.applyStyles(elem);
+            this.contentElem = elem;
+            this.applyStyles();
             this.outerElem.appendChild(elem);
             return this;
         },
