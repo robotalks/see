@@ -222,7 +222,7 @@
                 this._socket.onmessage = null;
                 this._socket.close();
             }
-            this._socket = new WebSocket('ws://' + location.host + '/ws');
+            this._socket = new WebSocket(location.href.replace(/^http/, 'ws').replace(/\/*$/, '') + '/ws');
             this._socket.onopen = this._connected.bind(this);
             this._socket.onclose = this._disconnected.bind(this);
             this._socket.onmessage = this._message.bind(this);

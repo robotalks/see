@@ -13,7 +13,7 @@ func main() {
 			Name: "see",
 			Desc: "Visualization Engine",
 			Options: []*flag.Option{
-				&flag.Option{
+				{
 					Name:    "port",
 					Alias:   []string{"p"},
 					Desc:    "Listening port",
@@ -21,13 +21,13 @@ func main() {
 					Type:    "int",
 					Default: 3500,
 				},
-				&flag.Option{
+				{
 					Name:  "quiet",
 					Alias: []string{"q"},
 					Desc:  "Turn off the logs",
 					Type:  "bool",
 				},
-				&flag.Option{
+				{
 					Name:    "plugin-dir",
 					Alias:   []string{"I"},
 					Desc:    "Visualize plugin directory for object renders",
@@ -35,19 +35,19 @@ func main() {
 					List:    true,
 					Tags:    map[string]interface{}{"help-var": "DIR"},
 				},
-				&flag.Option{
+				{
 					Name: "title",
 					Desc: "Title for web page",
 					Type: "string",
 				},
-				&flag.Option{
+				{
 					Name: "version",
 					Desc: "Show version and exit",
 					Type: "bool",
 				},
 			},
 			Arguments: []*flag.Option{
-				&flag.Option{
+				{
 					Name: "source",
 					Desc: "Message source, can be a program or a URL\n" +
 						"Supported protocol:\n" +

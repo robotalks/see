@@ -9,7 +9,7 @@ import (
 	hub "github.com/robotalks/mqhub.go/mqhub"
 	// load mqtt impl
 	_ "github.com/robotalks/mqhub.go/mqtt"
-	"github.com/robotalks/see/vis"
+	"github.com/robotalks/see/pkg/vis"
 )
 
 // MsgSource implements MsgSource backed by mqhub

@@ -2,11 +2,12 @@ package vis
 
 import (
 	"bytes"
+	"embed"
 	"encoding/json"
 	"fmt"
 	"html/template"
 	"io"
-	"io/ioutil"
+	"io/fs"
 	"net"
 	"net/http"
 	"os"
@@ -15,10 +16,9 @@ import (
 	"strings"
 	"sync"
 
-	rice "github.com/GeertJohan/go.rice"
 	logger "github.com/op/go-logging"
 	websocket "golang.org/x/net/websocket"
-	yaml "gopkg.in/yaml.v2"
+	yaml "gopkg.in/yaml.v3"
 )
 
 // PageContext defines the extensive content in page
@@ -49,10 +49,13 @@ const (
 	DefaultTitle = "Visualizer"
 )
 
+//go:embed www
+var wwwFS embed.FS
+
 // LoadPluginManifest loads plugin manifest from specified directory
 func LoadPluginManifest(dir string) (*PluginManifest, error) {
 	fn := filepath.Join(dir, PluginManifestFile)
-	raw, err := ioutil.ReadFile(fn)
+	raw, err := os.ReadFile(fn)
 	if err != nil {
 		return nil, err
 	}
@@ -177,26 +180,26 @@ func (s *Server) Handler(ext ServerExt) (http.Handler, error) {
 		prefix := "/plugins/" + p.name + "/"
 		mux.Handle(prefix, http.StripPrefix(prefix, http.FileServer(http.Dir(p.fullDir))))
 	}
-	fs := &layeredFs{}
+	lfs := &layeredFs{}
 	if s.LocalWebDir != "" {
 		s.Logger.Infof("Use Local Web Content: %s", s.LocalWebDir)
-		fs.Fs = append(fs.Fs, http.Dir(s.LocalWebDir))
+		lfs.Fs = append(lfs.Fs, http.Dir(s.LocalWebDir))
 	}
 	if s.WebContentDir != "" {
 		s.Logger.Infof("Use Web Content: %s", s.WebContentDir)
-		fs.Fs = append(fs.Fs, http.Dir(s.WebContentDir))
+		lfs.Fs = append(lfs.Fs, http.Dir(s.WebContentDir))
 	} else {
-		box, err := rice.FindBox("www")
+		subFS, err := fs.Sub(wwwFS, "www")
 		if err != nil {
-			return nil, err
+			panic(err)
 		}
-		fs.Fs = append(fs.Fs, box.HTTPBox())
+		lfs.Fs = append(lfs.Fs, http.FS(subFS))
 	}
-	fsHandler := http.FileServer(fs)
+	fsHandler := http.FileServer(lfs)
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodGet &&
 			(r.URL.Path == "/" || r.URL.Path == "index.html") {
-			s.HandleIndex(w, r, fs)
+			s.HandleIndex(w, r, lfs)
 		} else {
 			fsHandler.ServeHTTP(w, r)
 		}
@@ -230,7 +233,7 @@ func (s *Server) GenerateIndexPage(fs http.FileSystem) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	raw, err := ioutil.ReadAll(f)
+	raw, err := io.ReadAll(f)
 	f.Close()
 	if err != nil {
 		return "", err

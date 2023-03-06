@@ -4,17 +4,15 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path"
 	"strings"
 	"sync"
 	"text/template"
 
-	yaml "gopkg.in/yaml.v2"
-
 	"github.com/easeway/langx.go/mapper"
-	"github.com/robotalks/see/vis"
+	"github.com/robotalks/see/pkg/vis"
+	yaml "gopkg.in/yaml.v3"
 )
 
 // StateSchema defines a cached state
@@ -211,7 +209,7 @@ type Schema struct {
 
 // LoadSchemaFile load schema from file
 func LoadSchemaFile(filename string) (*Schema, error) {
-	content, err := ioutil.ReadFile(filename)
+	content, err := os.ReadFile(filename)
 	if err != nil {
 		return nil, err
 	}

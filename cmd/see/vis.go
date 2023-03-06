@@ -10,9 +10,9 @@ import (
 	"strings"
 
 	logger "github.com/op/go-logging"
-	vis "github.com/robotalks/see/vis"
-	"github.com/robotalks/see/vis/mqhub"
-	mqtt "github.com/robotalks/see/vis/mqtt"
+	vis "github.com/robotalks/see/pkg/vis"
+	"github.com/robotalks/see/pkg/vis/mqhub"
+	mqtt "github.com/robotalks/see/pkg/vis/mqtt"
 )
 
 // Version number

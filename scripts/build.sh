@@ -2,9 +2,9 @@
 
 set -ex
 
+# Target must be OS-ARCH, like linux-amd64
 TARGET="$1"
 test -n "$TARGET"
-test -d "$HMAKE_PROJECT_DIR"
 
 TARGET_OS="${TARGET%%-*}"
 TARGET_ARCH="${TARGET##*-}"
@@ -19,7 +19,10 @@ case "$TARGET_ARCH" in
     arm)
         export GOARCH=arm
         ;;
-    amd64)
+    arm64)
+        export GOARCH=arm64
+        ;;
+    amd64|x86_64)
         export GOARCH=amd64
         ;;
     *)
@@ -28,7 +31,7 @@ case "$TARGET_ARCH" in
         ;;
 esac
 
-OUTDIR="$HMAKE_PROJECT_DIR/bin/$TARGET_OS/$TARGET_ARCH"
+OUTDIR="bin/$TARGET_OS/$TARGET_ARCH"
 
 LDFLAGS="-s -w"
 if [ -n "$RELEASE" ]; then
@@ -44,12 +47,9 @@ fi
 build-go() {
     local cmd=$1
     CGO_ENABLED=0 GOOS=$TARGET_OS go build -o $OUTDIR/$cmd \
-        -a -tags 'static_build netgo' -installsuffix netgo \
-        -ldflags "$LDFLAGS -extldflags -static" \
+        -ldflags "$LDFLAGS" \
         ./cmd/$cmd
 }
 
 mkdir -p $OUTDIR
 build-go see
-rice append -i github.com/robotalks/see/vis \
-    --exec $OUTDIR/see

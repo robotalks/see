@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	paho "github.com/eclipse/paho.mqtt.golang"
-	"github.com/robotalks/see/vis"
+	"github.com/robotalks/see/pkg/vis"
 	"github.com/rs/xid"
 )
 

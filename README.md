@@ -23,21 +23,26 @@ it accepts.
 Supported platforms:
 
 - Mac OS X
-- Linux AMD64
-- Linux ARMv7
+- Linux AMD64/ARM64/ARMv7
 
-Build the tool using [hmake](https://evo-cloud.github.io/hmake) which is hassle-free,
-no worry about dependencies:
+Build using Go:
 
+```sh
+go build -o bin/see ./cmd/see
 ```
-hmake
+
+Build for specific target OS/Arch:
+
+```sh
+./scripts/build.sh linux-amd64
+./scripts/build.sh darwin-arm64
 ```
 
 It will generate executable `bin/OS/ARCH/see`.
 And now you can hook up your own simulation program:
 
 ```
-bin/linux/amd64/see -- my-sim-prog args...
+bin/see -- my-sim-prog args...
 ```
 
 Point your browser to `http://localhost:3500` and you will see the objects emitted
@@ -46,7 +51,7 @@ from your simulation program.
 To watch an MQTT topic:
 
 ```
-bin/linux/amd64/see mqtt://server:port/topic-prefix
+bin/see mqtt://server:port/topic-prefix
 ```
 
 And it will watch messages from topic `topic-prefix/msgs`, and emits events to
@@ -57,7 +62,7 @@ And it will watch messages from topic `topic-prefix/msgs`, and emits events to
 To hook up your own rendering extensions:
 
 ```
-bin/linux/amd64/see -I ext-dir1 -I ext-dir2 ... -- my-sim-prog args...
+bin/see -I ext-dir1 -I ext-dir2 ... -- my-sim-prog args...
 ```
 
 In each of extension directory, file `visualizer.plugin` is expected.
