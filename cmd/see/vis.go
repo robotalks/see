@@ -94,6 +94,12 @@ func (c *visCmd) Execute(args []string) error {
 			return err
 		}
 		source = src
+	case strings.HasPrefix(args[0], "tcp://"):
+		ln, e := net.Listen("tcp", args[0][6:])
+		if e != nil {
+			return e
+		}
+		source = vis.NewListenerSource(ln)
 	default:
 		if len(args) == 0 || args[0] == "" {
 			args = []string{"./.vis.exec"}
