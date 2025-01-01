@@ -95,8 +95,17 @@ type Server struct {
 	Title         string
 
 	plugins []*plugin
-	conns   map[*websocket.Conn]*websocket.Conn
-	lock    sync.RWMutex
+
+	connsLock sync.RWMutex
+	conns     map[*websocket.Conn]*websocket.Conn
+
+	assetsLock sync.RWMutex
+	assets     map[string]*assetData
+}
+
+type assetData struct {
+	contentType string
+	data        []byte
 }
 
 type layeredFs struct {
@@ -169,6 +178,7 @@ func (s *Server) AddBuiltin(builtin Builtin) *Server {
 func (s *Server) Handler(ext ServerExt) (http.Handler, error) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/objects", s.StatesHandler)
+	mux.Handle("/assets/", http.StripPrefix("/assets", http.HandlerFunc(s.AssetsHandler)))
 	mux.Handle("/ws", websocket.Handler(s.WebSocketHandler))
 	for _, b := range s.Builtins {
 		if b.Handler != nil {
@@ -277,12 +287,26 @@ func (s *Server) GenerateIndexPage(fs http.FileSystem) (string, error) {
 func (s *Server) WebSocketHandler(ws *websocket.Conn) {
 	s.addConn(ws)
 	defer s.rmConn(ws)
+	dataVals, err := s.DataValues()
+	if err != nil {
+		s.Logger.Errorf("States error: %v", err)
+		return
+	}
+	msgs := make([]Msg, 0, len(dataVals))
+	for id, val := range dataVals {
+		msgs = append(msgs, DataValueMsg(id, val))
+	}
+	_, err = ws.Write(MustEncode(msgs))
+	if err != nil {
+		s.Logger.Errorf("Write error: %v", err)
+		return
+	}
 	objs, err := s.Objects()
 	if err != nil {
 		s.Logger.Errorf("States error: %v", err)
 		return
 	}
-	msgs := make([]Msg, 0, len(objs))
+	msgs = make([]Msg, 0, len(objs))
 	for _, obj := range objs {
 		msgs = append(msgs, ObjectMsg(obj))
 	}
@@ -313,35 +337,35 @@ func (s *Server) WebSocketHandler(ws *websocket.Conn) {
 }
 
 func (s *Server) addConn(ws *websocket.Conn) {
-	s.lock.Lock()
+	s.connsLock.Lock()
 	if s.conns == nil {
 		s.conns = make(map[*websocket.Conn]*websocket.Conn)
 	}
 	s.conns[ws] = ws
-	s.lock.Unlock()
+	s.connsLock.Unlock()
 }
 
 func (s *Server) rmConn(ws *websocket.Conn) {
-	s.lock.Lock()
+	s.connsLock.Lock()
 	if s.conns != nil {
 		if s.conns[ws] == ws {
 			delete(s.conns, ws)
 		}
 	}
-	s.lock.Unlock()
+	s.connsLock.Unlock()
 	ws.Close()
 }
 
 func (s *Server) broadcastMessages(msgs []Msg) {
 	encoded := MustEncode(msgs)
 	var conns []*websocket.Conn
-	s.lock.RLock()
+	s.connsLock.RLock()
 	if s.conns != nil {
 		for conn := range s.conns {
 			conns = append(conns, conn)
 		}
 	}
-	s.lock.RUnlock()
+	s.connsLock.RUnlock()
 	for _, conn := range conns {
 		conn.Write(encoded)
 	}
@@ -373,6 +397,20 @@ func (s *Server) StatesHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// AssetsHandler is the http handler serving assets
+func (s *Server) AssetsHandler(w http.ResponseWriter, r *http.Request) {
+	key := strings.Trim(r.URL.Path, "/")
+	s.assetsLock.RLock()
+	data := s.assets[key]
+	s.assetsLock.RUnlock()
+	if data == nil {
+		http.Error(w, "Not found", http.StatusNotFound)
+		return
+	}
+	w.Header().Add("Content-type", data.contentType)
+	w.Write(data.data)
+}
+
 // RecvMessages implements MessageSink
 func (s *Server) RecvMessages(msgs []Msg) {
 	for _, msg := range msgs {
@@ -393,6 +431,31 @@ func (s *Server) HandleMessage(a Msg) (err error) {
 		} else {
 			err = fmt.Errorf("missing property object")
 		}
+	case ActionData:
+		if id := a.ID(); id == "" {
+			err = fmt.Errorf("missing property id")
+		} else if val := a.Value(); val == nil {
+			err = fmt.Errorf("missing property value")
+		} else {
+			err = s.UpdateDataValue(id, val)
+		}
+	case ActionAsset:
+		if id := a.ID(); id == "" {
+			err = fmt.Errorf("missing property id")
+		} else if data, ok := (a[PropData].(string)); !ok {
+			err = fmt.Errorf("missing property data")
+		} else {
+			contentType, ok := (a["content-type"].(string))
+			if !ok || contentType == "" {
+				contentType = "application/octet-stream"
+			}
+			s.assetsLock.Lock()
+			if s.assets == nil {
+				s.assets = make(map[string]*assetData)
+			}
+			s.assets[id] = &assetData{contentType: contentType, data: []byte(data)}
+			s.assetsLock.Unlock()
+		}
 	case ActionRemove:
 		err = s.Remove(a.ID())
 	default:
@@ -408,6 +471,9 @@ func (s *Server) HandleMessage(a Msg) (err error) {
 
 // Reset implements StateStore
 func (s *Server) Reset() error {
+	s.assetsLock.Lock()
+	s.assets = nil
+	s.assetsLock.Unlock()
 	return s.States.Reset()
 }
 
@@ -416,12 +482,29 @@ func (s *Server) Objects() (map[string]Object, error) {
 	return s.States.Objects()
 }
 
+// DataValues implements StateStore
+func (s *Server) DataValues() (map[string]DataValue, error) {
+	return s.States.DataValues()
+}
+
 // Update implements StateStore
 func (s *Server) Update(objs ...Object) error {
 	return s.States.Update(objs...)
 }
 
+// UpdateDataValue implements StateStore
+func (s *Server) UpdateDataValue(id string, val DataValue) error {
+	return s.States.UpdateDataValue(id, val)
+}
+
 // Remove implements StateStore
 func (s *Server) Remove(ids ...string) error {
+	s.assetsLock.Lock()
+	if s.assets != nil {
+		for _, id := range ids {
+			delete(s.assets, id)
+		}
+	}
+	s.assetsLock.Unlock()
 	return s.States.Remove(ids...)
 }

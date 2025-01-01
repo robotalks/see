@@ -34,6 +34,16 @@ func (m Msg) Object() Object {
 	return nil
 }
 
+// Value returns the value property
+func (m Msg) Value() DataValue {
+	val, ok := m[PropValue]
+	if !ok {
+		return nil
+	}
+	data, _ := json.Marshal(val)
+	return DataValue(data)
+}
+
 // ID returns id property
 func (m Msg) ID() string {
 	return stringProp(m, PropID)
@@ -60,6 +70,17 @@ func (m Msg) ByKeys(keys ...string) (v interface{}) {
 		}
 	}
 	return
+}
+
+// DataValue is the value of a data entry.
+type DataValue json.RawMessage
+
+func DataValueMsg(id string, val DataValue) Msg {
+	return Msg{
+		PropAction: ActionData,
+		PropID:     id,
+		PropValue:  json.RawMessage(val),
+	}
 }
 
 // Object is an object containing arbitrary fields
@@ -129,9 +150,13 @@ type MsgSource interface {
 const (
 	PropAction   = "action"
 	PropObject   = "object"
+	PropValue    = "value"
+	PropData     = "data"
 	PropID       = "id"
 	ActionReset  = "reset"
 	ActionObject = "object"
+	ActionData   = "data"
+	ActionAsset  = "asset"
 	ActionRemove = "remove"
 )
 

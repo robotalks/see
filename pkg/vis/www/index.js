@@ -200,6 +200,7 @@
         constructor: function () {
             this._factories = {};
             this._objects = {};
+            this._data = {};
         },
 
         start: function (elem) {
@@ -264,6 +265,10 @@
 
         worldElem: function () {
             return this._elem;
+        },
+
+        dataById: function (id) {
+            return this._data[id];
         },
 
         updateLayout: function () {
@@ -385,6 +390,7 @@
                 this._objects[id].destroy();
             }
             this._objects = {};
+            this._data = {};
             return this;
         },
 
@@ -415,6 +421,17 @@
             this.addObjectElem(cmd.object);
         },
 
+        _update_data: function (cmd) {
+            if (typeof(cmd.id) != 'string' || cmd.id == '') {
+                return;
+            }
+            if (cmd.value === undefined) {
+                delete this._date[cmd.id];
+                return;
+            }
+            this._data[cmd.id] = cmd.value;
+        },
+
         _update_remove: function (cmd) {
             if (typeof(cmd.id) == 'string') {
                 var obj = this._objects[cmd.id];
@@ -422,6 +439,7 @@
                     delete this._objects[cmd.id];
                     obj.destroy();
                 }
+                delete this._data[cmd.id];
             }
         },
 
